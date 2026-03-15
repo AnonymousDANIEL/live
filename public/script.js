@@ -57,4 +57,51 @@ function renderRows(rows) {
 }
 
 async function loadLive() {
+  syncState.textContent = "Status: syncing...";
+
+  try {
+    const response = await fetch(`/api/live?t=${Date.now()}`, {
+      cache: "no-store"
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(data.error || "Failed to load live data");
+    }
+
+    renderRows(data.rows || []);
+
+    const time = data.updatedAt ? new Date(data.updatedAt) : new Date();
+    syncTime.textContent = `Last sync: ${time.toLocaleString()}`;
+    syncState.textContent = `Status: ${data.cached ? "cache" : "live fetch"}`;
+  } catch (error) {
+    syncState.textContent = "Status: error";
+    liveBody.innerHTML = `
+      <tr>
+        <td colspan="5" class="empty">Sync failed: ${escapeHtml(error.message)}</td>
+      </tr>
+    `;
+  }
+}
+
+function startAutoScroll() {
+  if (autoScrollTimer) return;
+
+  autoScrollTimer = setInterval(() => {
+    if (!tableScroll) return;
+
+    const atBottom =
+      tableScroll.scrollTop + tableScroll.clientHeight >= tableScroll.scrollHeight - 2;
+
+    if (atBottom) {
+      tableScroll.scrollTop = 0;
+    } else {
+      tableScroll.scrollTop += 1;
+    }
+  }, 55);
+}
+
+loadLive();
+setInterval(loadLive, 10000);
 startAutoScroll();
