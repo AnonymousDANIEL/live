@@ -1,11 +1,12 @@
 {
   "name": "live-sync-app",
   "version": "1.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "puppeteer": "^22.0.0"
+    "puppeteer": "^24.7.1"
   }
 }
