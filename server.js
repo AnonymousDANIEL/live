@@ -1,36 +1,52 @@
 import http from "http";
-import axios from "axios";
-import * as cheerio from "cheerio";
+import puppeteer from "puppeteer";
 
 const PORT = process.env.PORT || 3000;
-const TARGET_URL = "https://bintang44.asia/";
 
 async function fetchLiveRows() {
-  const response = await axios.get(TARGET_URL);
 
-  const $ = cheerio.load(response.data);
+  const browser = await puppeteer.launch({
+    args: ["--no-sandbox"]
+  });
 
-  const rows = [];
+  const page = await browser.newPage();
 
-  const trs = $("#home-livetx table tbody tr");
+  await page.goto("https://bintang44.asia/", {
+    waitUntil: "networkidle2"
+  });
 
-  trs.each((i, tr) => {
+  await page.waitForSelector("#home-livetx");
 
-    const tds = $(tr).find("td");
+  const rows = await page.evaluate(() => {
 
-    if (tds.length < 5) return;
+    const data = [];
 
-    rows.push({
-      topupPhone: $(tds[0]).text().trim(),
-      topupAmount: $(tds[1]).text().trim(),
-      withdrawPhone: $(tds[2]).text().trim(),
-      withdrawAmount: $(tds[3]).text().trim(),
-      withdrawName: $(tds[4]).text().trim()
+    const trs = document.querySelectorAll("#home-livetx table tbody tr");
+
+    trs.forEach(tr => {
+
+      const td = tr.querySelectorAll("td");
+
+      if (td.length < 5) return;
+
+      data.push({
+        topupPhone: td[0].innerText.trim(),
+        topupAmount: td[1].innerText.trim(),
+        withdrawPhone: td[2].innerText.trim(),
+        withdrawAmount: td[3].innerText.trim(),
+        withdrawName: td[4].innerText.trim()
+      });
+
     });
+
+    return data;
 
   });
 
+  await browser.close();
+
   return rows;
+
 }
 
 const server = http.createServer(async (req, res) => {
@@ -48,7 +64,7 @@ const server = http.createServer(async (req, res) => {
 
       res.end(JSON.stringify({
         ok: true,
-        rows: rows
+        rows
       }));
 
     } catch (err) {
@@ -66,7 +82,7 @@ const server = http.createServer(async (req, res) => {
 
   }
 
-  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.writeHead(200);
   res.end("Server running");
 
 });
