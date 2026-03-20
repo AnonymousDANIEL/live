@@ -76,7 +76,7 @@ async function loadLive() {
     syncTime.textContent = `Last sync: ${time.toLocaleString()}`;
     syncState.textContent = `Status: ${data.cached ? "cache" : "live fetch"}`;
   } catch (error) {
-    syncState.textContent = "Status: error";
+    syncState.textContent = `Status: error`;
     liveBody.innerHTML = `
       <tr>
         <td colspan="5" class="empty">Sync failed: ${escapeHtml(error.message)}</td>
@@ -87,21 +87,4 @@ async function loadLive() {
 
 function startAutoScroll() {
   if (autoScrollTimer) return;
-
-  autoScrollTimer = setInterval(() => {
-    if (!tableScroll) return;
-
-    const atBottom =
-      tableScroll.scrollTop + tableScroll.clientHeight >= tableScroll.scrollHeight - 2;
-
-    if (atBottom) {
-      tableScroll.scrollTop = 0;
-    } else {
-      tableScroll.scrollTop += 1;
-    }
-  }, 55);
-}
-
-loadLive();
-setInterval(loadLive, 10000);
 startAutoScroll();
