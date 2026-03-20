@@ -5,6 +5,7 @@ const tableScroll = document.getElementById("tableScroll");
 
 const previousKeys = new Set();
 let autoScrollTimer = null;
+let paused = false;
 
 function escapeHtml(value = "") {
   return String(value)
@@ -76,7 +77,7 @@ async function loadLive() {
     syncTime.textContent = `Last sync: ${time.toLocaleString()}`;
     syncState.textContent = `Status: ${data.cached ? "cache" : "live fetch"}`;
   } catch (error) {
-    syncState.textContent = `Status: error`;
+    syncState.textContent = "Status: error";
     liveBody.innerHTML = `
       <tr>
         <td colspan="5" class="empty">Sync failed: ${escapeHtml(error.message)}</td>
@@ -87,4 +88,39 @@ async function loadLive() {
 
 function startAutoScroll() {
   if (autoScrollTimer) return;
+
+  autoScrollTimer = setInterval(() => {
+    if (!tableScroll || paused) return;
+
+    const atBottom =
+      tableScroll.scrollTop + tableScroll.clientHeight >= tableScroll.scrollHeight - 2;
+
+    if (atBottom) {
+      tableScroll.scrollTop = 0;
+    } else {
+      tableScroll.scrollTop += 1;
+    }
+  }, 40);
+}
+
+if (tableScroll) {
+  tableScroll.addEventListener("mouseenter", () => {
+    paused = true;
+  });
+
+  tableScroll.addEventListener("mouseleave", () => {
+    paused = false;
+  });
+
+  tableScroll.addEventListener("touchstart", () => {
+    paused = true;
+  }, { passive: true });
+
+  tableScroll.addEventListener("touchend", () => {
+    paused = false;
+  }, { passive: true });
+}
+
+loadLive();
+setInterval(loadLive, 10000);
 startAutoScroll();
